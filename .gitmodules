@@ -1,0 +1,3 @@
+[submodule "submodules/framework"]
+	path = submodules/framework
+	url = https://github.com/huabeiyipilang/AndroidAppFramework.git
