@@ -28,7 +28,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public class ContactActivity extends BaseActivity {
+public class ContactActivity extends BaseActivity implements App.IServerListChangedListener {
 
     protected List<EaseUser> contactList = new ArrayList<>();
     protected ListView listView;
@@ -48,9 +48,7 @@ public class ContactActivity extends BaseActivity {
 
         });
         listView = (ListView) this.findViewById(R.id.listView);
-        getContactList();
-        adapter = new ContactAdapter(this, contactList);
-        listView.setAdapter(adapter);
+        updateContactList();
         listView.setOnItemClickListener(new OnItemClickListener() {
 
             @Override
@@ -61,6 +59,26 @@ public class ContactActivity extends BaseActivity {
 
         });
 
+        App.getInstance().addServerListChangedListener(this);
+
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        App.getInstance().removeServerListChangedListener(this);
+    }
+
+    private void updateContactList() {
+        getContactList();
+        if (adapter == null) {
+            getContactList();
+            adapter = new ContactAdapter(this, contactList);
+            listView.setAdapter(adapter);
+        } else {
+            adapter.setUsers(contactList);
+            adapter.notifyDataSetChanged();
+        }
     }
 
     /**
@@ -112,6 +130,11 @@ public class ContactActivity extends BaseActivity {
 
     }
 
+    @Override
+    public void onServerListChanged() {
+        updateContactList();
+    }
+
     class ContactAdapter extends BaseAdapter {
         private Context context;
         private List<EaseUser> users;
@@ -123,6 +146,10 @@ public class ContactActivity extends BaseActivity {
             this.users = users;
             inflater = LayoutInflater.from(context);
 
+        }
+
+        public void setUsers(List<EaseUser> users) {
+            this.users = users;
         }
 
         @Override
