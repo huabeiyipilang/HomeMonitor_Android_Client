@@ -1,6 +1,5 @@
 package com.penghaonan.homemonitorclient.activity;
 
-import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
@@ -19,6 +18,7 @@ import com.hyphenate.chat.EMClient;
 import com.hyphenate.exceptions.HyphenateException;
 import com.penghaonan.homemonitorclient.App;
 import com.penghaonan.homemonitorclient.R;
+import com.penghaonan.homemonitorclient.base.BaseActivity;
 import com.penghaonan.homemonitorclient.db.DemoDBManager;
 import com.penghaonan.homemonitorclient.db.EaseUser;
 import com.penghaonan.homemonitorclient.utils.EaseCommonUtils;
@@ -30,7 +30,7 @@ import java.util.Map;
 /**
  * 登陆页面
  */
-public class LoginActivity extends Activity {
+public class LoginActivity extends BaseActivity {
 	private static final String TAG = "LoginActivity";
 	public static final int REQUEST_CODE_SETNICK = 1;
 	private EditText usernameEditText;
@@ -49,7 +49,7 @@ public class LoginActivity extends Activity {
 		// 如果登录成功过，直接进入主页面
 		if (EMClient.getInstance().isLoggedInBefore()) {
 			autoLogin = true;
-			startActivity(new Intent(LoginActivity.this, MainActivity.class));
+			startActivity(new Intent(LoginActivity.this, ContactActivity.class));
 
 			return;
 		}
@@ -135,7 +135,7 @@ public class LoginActivity extends Activity {
  
 				// 进入主页面
 				Intent intent = new Intent(LoginActivity.this,
-						MainActivity.class);
+						ContactActivity.class);
 				startActivity(intent);
 
 				finish();

@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">HomeMonitorClient</string>
+
+    <string name="cmd_get_profile">更新命令</string>
+    <string name="add_server">添加</string>
+    <string name="server_list">监控列表</string>
+    <string name="double_click_exite">再次点击退出应用</string>
+    <string name="add_server_title">添加监控器</string>
+    <string name="server_id_hint">输入监控器ID</string>
+    <string name="add_server_btn">添加</string>
+    <string name="add_server_scan_btn">扫码</string>
 </resources>

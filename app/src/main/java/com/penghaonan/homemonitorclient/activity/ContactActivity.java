@@ -1,6 +1,5 @@
 package com.penghaonan.homemonitorclient.activity;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -15,8 +14,10 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.hyphenate.chat.EMClient;
+import com.penghaonan.appframework.utils.DoubleEventHelper;
 import com.penghaonan.homemonitorclient.App;
 import com.penghaonan.homemonitorclient.R;
+import com.penghaonan.homemonitorclient.base.BaseActivity;
 import com.penghaonan.homemonitorclient.db.EaseUser;
 import com.penghaonan.homemonitorclient.utils.EaseCommonUtils;
 
@@ -27,12 +28,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public class ContactActivity extends Activity {
+public class ContactActivity extends BaseActivity {
 
     protected List<EaseUser> contactList = new ArrayList<>();
     protected ListView listView;
     private Map<String, EaseUser> contactsMap;
     private ContactAdapter adapter;
+    private DoubleEventHelper mDoubleEventHelper = new DoubleEventHelper(1000, R.string.double_click_exite);
 
     protected void onCreate(Bundle arg0) {
         super.onCreate(arg0);
@@ -155,7 +157,12 @@ public class ContactActivity extends Activity {
 
             return convertView;
         }
-
     }
 
+    @Override
+    public void onBackPressed() {
+        if (mDoubleEventHelper.onEvent()) {
+            super.onBackPressed();
+        }
+    }
 }

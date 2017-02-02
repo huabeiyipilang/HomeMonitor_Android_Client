@@ -53,7 +53,7 @@ public class SplashActivity extends  Activity {
 						}
 					}
 					//进入主页面
-					startActivity(new Intent(SplashActivity.this, MainActivity.class));
+					startActivity(new Intent(SplashActivity.this, ContactActivity.class));
 					finish();
 				}else {
 					try {

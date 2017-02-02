@@ -1,6 +1,5 @@
 package com.penghaonan.homemonitorclient.activity;
 
-import android.app.Activity;
 import android.app.ProgressDialog;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -12,8 +11,9 @@ import android.widget.Toast;
 
 import com.hyphenate.chat.EMClient;
 import com.penghaonan.homemonitorclient.R;
+import com.penghaonan.homemonitorclient.base.BaseActivity;
 
-public class AddContactActivity extends Activity {
+public class AddContactActivity extends BaseActivity {
 
  
 	private ProgressDialog progressDialog;

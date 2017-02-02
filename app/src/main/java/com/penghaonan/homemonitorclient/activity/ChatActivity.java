@@ -1,7 +1,7 @@
 package com.penghaonan.homemonitorclient.activity;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -12,22 +12,34 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
 import com.hyphenate.EMMessageListener;
 import com.hyphenate.chat.EMClient;
 import com.hyphenate.chat.EMConversation;
+import com.hyphenate.chat.EMImageMessageBody;
 import com.hyphenate.chat.EMMessage;
 import com.hyphenate.chat.EMMessage.ChatType;
 import com.hyphenate.chat.EMTextMessageBody;
+import com.nostra13.universalimageloader.core.ImageLoader;
+import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
+import com.penghaonan.appframework.utils.UiUtils;
 import com.penghaonan.homemonitorclient.Constant;
 import com.penghaonan.homemonitorclient.R;
+import com.penghaonan.homemonitorclient.base.BaseActivity;
+import com.penghaonan.homemonitorclient.cmd.CmdHelper;
+import com.penghaonan.homemonitorclient.cmd.CmdPanelView;
+import com.penghaonan.homemonitorclient.cmd.CommandData;
 import com.penghaonan.homemonitorclient.utils.EaseCommonUtils;
 
 import java.util.List;
 
-public class ChatActivity extends Activity {
+import butterknife.ButterKnife;
+import butterknife.OnClick;
+
+public class ChatActivity extends BaseActivity implements CmdPanelView.CmdListener {
     private ListView listView;
     private int chatType = 1;
     private String toChatUsername;
@@ -36,19 +48,27 @@ public class ChatActivity extends Activity {
     private List<EMMessage> msgList;
     MessageAdapter adapter;
     private EMConversation conversation;
-    protected int pagesize = 20;
+    protected int pagesize = 2;
+    private CmdHelper mCmdHelper;
 
     @Override
     protected void onCreate(Bundle arg0) {
         super.onCreate(arg0);
         setContentView(R.layout.activity_chat);
+        ButterKnife.bind(this);
+
+        ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder(this).build();
+        ImageLoader mImageLoader = ImageLoader.getInstance();
+        mImageLoader.init(config);
 
         toChatUsername = this.getIntent().getStringExtra("username");
+        mCmdHelper = new CmdHelper(toChatUsername);
         TextView tv_toUsername = (TextView) this.findViewById(R.id.tv_toUsername);
         tv_toUsername.setText(toChatUsername);
         listView = (ListView) this.findViewById(R.id.listView);
         btn_send = (Button) this.findViewById(R.id.btn_send);
         et_content = (EditText) this.findViewById(R.id.et_content);
+        et_content.clearFocus();
         getAllMessage();
         msgList = conversation.getAllMessages();
         adapter = new MessageAdapter(msgList, ChatActivity.this);
@@ -60,7 +80,6 @@ public class ChatActivity extends Activity {
             public void onClick(View v) {
                 String content = et_content.getText().toString().trim();
                 if (TextUtils.isEmpty(content)) {
-
                     return;
                 }
                 setMesaage(content);
@@ -68,7 +87,6 @@ public class ChatActivity extends Activity {
 
         });
         EMClient.getInstance().chatManager().addMessageListener(msgListener);
-
     }
 
     protected void getAllMessage() {
@@ -92,6 +110,12 @@ public class ChatActivity extends Activity {
 
     }
 
+    private void scrollToBottom() {
+        if (msgList.size() > 0) {
+            listView.smoothScrollToPosition(listView.getCount());
+        }
+    }
+
     private void setMesaage(String content) {
 
         // 创建一条文本消息，content为消息文字内容，toChatUsername为对方用户或者群聊的id，后文皆是如此
@@ -104,9 +128,7 @@ public class ChatActivity extends Activity {
         msgList.add(message);
 
         adapter.notifyDataSetChanged();
-        if (msgList.size() > 0) {
-            listView.setSelection(listView.getCount() - 1);
-        }
+        scrollToBottom();
         et_content.setText("");
         et_content.clearFocus();
     }
@@ -117,7 +139,7 @@ public class ChatActivity extends Activity {
         public void onMessageReceived(List<EMMessage> messages) {
 
             for (EMMessage message : messages) {
-                String username = null;
+                String username;
                 // 群组消息
                 if (message.getChatType() == ChatType.GroupChat || message.getChatType() == ChatType.ChatRoom) {
                     username = message.getTo();
@@ -127,13 +149,13 @@ public class ChatActivity extends Activity {
                 }
                 // 如果是当前会话的消息，刷新聊天页面
                 if (username.equals(toChatUsername)) {
+                    if (message.getBody() instanceof EMTextMessageBody) {
+                        EMTextMessageBody textBody = (EMTextMessageBody) message.getBody();
+                        mCmdHelper.handleResponse(textBody.getMessage());
+                    }
                     msgList.addAll(messages);
                     adapter.notifyDataSetChanged();
-                    if (msgList.size() > 0) {
-                        et_content.setSelection(listView.getCount() - 1);
-
-                    }
-
+                    scrollToBottom();
                 }
             }
 
@@ -168,12 +190,12 @@ public class ChatActivity extends Activity {
     }
 
     @SuppressLint("InflateParams")
-    class MessageAdapter extends BaseAdapter {
+    private class MessageAdapter extends BaseAdapter {
         private List<EMMessage> msgs;
         private Context context;
         private LayoutInflater inflater;
 
-        public MessageAdapter(List<EMMessage> msgs, Context context_) {
+        MessageAdapter(List<EMMessage> msgs, Context context_) {
             this.msgs = msgs;
             this.context = context_;
             inflater = LayoutInflater.from(context);
@@ -197,12 +219,25 @@ public class ChatActivity extends Activity {
         @Override
         public int getItemViewType(int position) {
             EMMessage message = getItem(position);
-            return message.direct() == EMMessage.Direct.RECEIVE ? 0 : 1;
+            if (message.direct() == EMMessage.Direct.RECEIVE) {
+                if (message.getBody() instanceof EMTextMessageBody) {
+                    return 0;
+                } else if (message.getBody() instanceof EMImageMessageBody) {
+                    return 1;
+                }
+            } else {
+                if (message.getBody() instanceof EMTextMessageBody) {
+                    return 2;
+                } else if (message.getBody() instanceof EMImageMessageBody) {
+                    return 3;
+                }
+            }
+            return 2;
         }
 
         @Override
         public int getViewTypeCount() {
-            return 2;
+            return 4;
         }
 
         @SuppressLint("InflateParams")
@@ -210,32 +245,85 @@ public class ChatActivity extends Activity {
         public View getView(int position, View convertView, ViewGroup parent) {
             EMMessage message = getItem(position);
             int viewType = getItemViewType(position);
-            if (convertView == null) {
-                if (viewType == 0) {
-                    convertView = inflater.inflate(R.layout.item_message_received, parent, false);
-                } else {
-                    convertView = inflater.inflate(R.layout.item_message_sent, parent, false);
-                }
-            }
-            ViewHolder holder = (ViewHolder) convertView.getTag();
-            if (holder == null) {
-                holder = new ViewHolder();
-                holder.tv = (TextView) convertView.findViewById(R.id.tv_chatcontent);
-                convertView.setTag(holder);
+            switch (viewType) {
+                case 0:
+                    if (convertView == null) {
+                        convertView = inflater.inflate(R.layout.item_message_received, parent, false);
+                        TextMsgViewHolder holder = new TextMsgViewHolder();
+                        holder.tv = (TextView) convertView.findViewById(R.id.tv_chatcontent);
+                        convertView.setTag(holder);
+                    }
+                    EMTextMessageBody txtBody0 = (EMTextMessageBody) message.getBody();
+                    TextMsgViewHolder holder0 = (TextMsgViewHolder) convertView.getTag();
+                    holder0.tv.setText(txtBody0.getMessage());
+                    break;
+                case 1:
+                    if (convertView == null) {
+                        convertView = inflater.inflate(R.layout.item_message_img_received, parent, false);
+                        ImgMsgViewHolder holder = new ImgMsgViewHolder();
+                        holder.iv = (ImageView) convertView.findViewById(R.id.tv_chatcontent);
+                        convertView.setTag(holder);
+                    }
+                    EMImageMessageBody imgBody1 = (EMImageMessageBody) message.getBody();
+                    ImgMsgViewHolder holder1 = (ImgMsgViewHolder) convertView.getTag();
+                    ImageLoader.getInstance().displayImage(imgBody1.getRemoteUrl(), holder1.iv);
+                    break;
+                case 2:
+                    if (convertView == null) {
+                        convertView = inflater.inflate(R.layout.item_message_sent, parent, false);
+                        TextMsgViewHolder holder = new TextMsgViewHolder();
+                        holder.tv = (TextView) convertView.findViewById(R.id.tv_chatcontent);
+                        convertView.setTag(holder);
+                    }
+                    EMTextMessageBody txtBody2 = (EMTextMessageBody) message.getBody();
+                    TextMsgViewHolder holder2 = (TextMsgViewHolder) convertView.getTag();
+                    holder2.tv.setText(txtBody2.getMessage());
+                    break;
+                case 3:
+                    if (convertView == null) {
+                        convertView = inflater.inflate(R.layout.item_message_img_sent, parent, false);
+                        ImgMsgViewHolder holder = new ImgMsgViewHolder();
+                        holder.iv = (ImageView) convertView.findViewById(R.id.tv_chatcontent);
+                        convertView.setTag(holder);
+                    }
+                    EMImageMessageBody imgBody3 = (EMImageMessageBody) message.getBody();
+                    ImgMsgViewHolder holder3 = (ImgMsgViewHolder) convertView.getTag();
+                    ImageLoader.getInstance().displayImage(imgBody3.getRemoteUrl(), holder3.iv);
+                    break;
             }
 
-            EMTextMessageBody txtBody = (EMTextMessageBody) message.getBody();
-            holder.tv.setText(txtBody.getMessage());
             return convertView;
         }
 
     }
 
-    public static class ViewHolder {
-
+    private static class TextMsgViewHolder {
         TextView tv;
-
     }
 
+    private static class ImgMsgViewHolder {
+        ImageView iv;
+    }
 
+    private CmdPanelView mPanelView;
+    private AlertDialog mCmdDailog;
+
+    @OnClick(R.id.btn_cmd)
+    void onCmdClick() {
+        if (mCmdDailog == null) {
+            mPanelView = new CmdPanelView(this);
+            mPanelView.setCmdListener(this);
+            mCmdDailog = new AlertDialog.Builder(this).setView(mPanelView).create();
+        }
+        mPanelView.updateCmds(mCmdHelper.getCmd());
+        mCmdDailog.show();
+    }
+
+    @Override
+    public void OnCmdSelected(CommandData cmd) {
+        mCmdDailog.dismiss();
+        if (cmd != null && !TextUtils.isEmpty(cmd.command)) {
+            setMesaage(cmd.command);
+        }
+    }
 }

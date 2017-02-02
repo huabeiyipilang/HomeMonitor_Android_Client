@@ -13,7 +13,6 @@
  */
 package com.penghaonan.homemonitorclient.activity;
 
-import android.app.Activity;
 import android.app.ProgressDialog;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -26,12 +25,13 @@ import com.hyphenate.chat.EMClient;
 import com.hyphenate.exceptions.HyphenateException;
 import com.penghaonan.homemonitorclient.App;
 import com.penghaonan.homemonitorclient.R;
+import com.penghaonan.homemonitorclient.base.BaseActivity;
 
 /**
  * 注册页
  * 
  */
-public class RegisterActivity extends  Activity {
+public class RegisterActivity extends BaseActivity {
 	private EditText userNameEditText;
 	private EditText passwordEditText;
 	private EditText confirmPwdEditText;
