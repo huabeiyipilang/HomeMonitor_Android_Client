@@ -2,7 +2,10 @@ package com.penghaonan.homemonitorclient;
 
 import android.app.ActivityManager;
 import android.app.Application;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
@@ -46,6 +49,9 @@ public class App extends Application {
         init(applicationContext);
         inviteMessgeDao = new InviteMessgeDao(this);
         initContactListener();
+
+        IntentFilter callFilter = new IntentFilter(EMClient.getInstance().callManager().getIncomingCallBroadcastAction());
+        registerReceiver(new CallReceiver(), callFilter);
     }
 
     public static App getInstance() {
@@ -352,5 +358,39 @@ public class App extends Application {
 
     public interface IServerListChangedListener {
         void onServerListChanged();
+    }
+
+    private List<ICallReceiverListener> mCallReceiverListeners = new LinkedList<>();
+
+    public void addCallReceiverListener(ICallReceiverListener listener) {
+        if (!mCallReceiverListeners.contains(listener)) {
+            mCallReceiverListeners.add(listener);
+        }
+    }
+
+    public void removeCallReceiverListener(ICallReceiverListener listener) {
+        if (mCallReceiverListeners.contains(listener)) {
+            mCallReceiverListeners.remove(listener);
+        }
+    }
+
+    public interface ICallReceiverListener {
+        void onCallRing(String from, String type);
+    }
+
+    private class CallReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            // 拨打方username
+            String from = intent.getStringExtra("from");
+            // call type
+            String type = intent.getStringExtra("type");
+            //跳转到通话页面
+
+            for (ICallReceiverListener listener : mCallReceiverListeners) {
+                listener.onCallRing(from, type);
+            }
+        }
     }
 }

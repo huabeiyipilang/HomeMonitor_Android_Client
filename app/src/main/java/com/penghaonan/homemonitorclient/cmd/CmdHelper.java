@@ -5,8 +5,13 @@ import android.content.SharedPreferences;
 import android.text.TextUtils;
 
 import com.alibaba.fastjson.JSON;
+import com.hyphenate.chat.EMClient;
+import com.hyphenate.exceptions.EMNoActiveCallException;
 import com.penghaonan.appframework.AppDelegate;
 import com.penghaonan.appframework.utils.CollectionUtils;
+import com.penghaonan.appframework.utils.Logger;
+import com.penghaonan.appframework.utils.StringUtils;
+import com.penghaonan.homemonitorclient.App;
 import com.penghaonan.homemonitorclient.R;
 
 import java.util.Collection;
@@ -14,12 +19,24 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class CmdHelper {
+public class CmdHelper implements App.ICallReceiverListener {
     private final static String CMD_GET_PROFILE = "getprofile";
     private SharedPreferences pref = AppDelegate.getApp().getSharedPreferences("cmd_cache", Context.MODE_PRIVATE);
     private String mServerName;
     private Map<String, CommandData> mCommands = new HashMap<>();
     private OnCmdChangedListener mListener;
+
+    @Override
+    public void onCallRing(String from, String type) {
+        if (StringUtils.isEquals(from, mServerName)) {
+            try {
+                EMClient.getInstance().callManager().answerCall();
+                VideoCallActivity.startVideoCall();
+            } catch (EMNoActiveCallException e) {
+                Logger.e(e);
+            }
+        }
+    }
 
     public interface OnCmdChangedListener {
         void onCmdChanged(Collection<CommandData> cmds);
@@ -28,6 +45,7 @@ public class CmdHelper {
     public CmdHelper(String server) {
         mServerName = server;
         loadCmdFromCache();
+        App.getInstance().addCallReceiverListener(this);
     }
 
     public void setOnCmdChangedListener(OnCmdChangedListener listener) {
@@ -74,5 +92,9 @@ public class CmdHelper {
         if (mListener != null) {
             mListener.onCmdChanged(mCommands.values());
         }
+    }
+
+    public void release() {
+        App.getInstance().removeCallReceiverListener(this);
     }
 }

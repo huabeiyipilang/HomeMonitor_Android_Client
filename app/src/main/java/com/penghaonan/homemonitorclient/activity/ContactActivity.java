@@ -54,7 +54,6 @@ public class ContactActivity extends BaseActivity implements App.IServerListChan
             @Override
             public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
                 startActivity(new Intent(ContactActivity.this, ChatActivity.class).putExtra("username", adapter.getItem(arg2).getUsername()));
-                finish();
             }
 
         });

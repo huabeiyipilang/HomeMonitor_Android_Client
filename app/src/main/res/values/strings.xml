@@ -3,6 +3,7 @@
 
     <string name="cmd_get_profile">更新命令</string>
     <string name="add_server">添加</string>
+    <string name="remove_server">删除</string>
     <string name="server_list">监控列表</string>
     <string name="double_click_exite">再次点击退出应用</string>
     <string name="add_server_title">添加监控器</string>

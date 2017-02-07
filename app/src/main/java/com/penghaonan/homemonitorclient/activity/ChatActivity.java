@@ -23,9 +23,10 @@ import com.hyphenate.chat.EMImageMessageBody;
 import com.hyphenate.chat.EMMessage;
 import com.hyphenate.chat.EMMessage.ChatType;
 import com.hyphenate.chat.EMTextMessageBody;
+import com.hyphenate.exceptions.HyphenateException;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
-import com.penghaonan.appframework.utils.UiUtils;
+import com.penghaonan.appframework.utils.Logger;
 import com.penghaonan.homemonitorclient.Constant;
 import com.penghaonan.homemonitorclient.R;
 import com.penghaonan.homemonitorclient.base.BaseActivity;
@@ -187,6 +188,7 @@ public class ChatActivity extends BaseActivity implements CmdPanelView.CmdListen
     protected void onDestroy() {
         super.onDestroy();
         EMClient.getInstance().chatManager().removeMessageListener(msgListener);
+        mCmdHelper.release();
     }
 
     @SuppressLint("InflateParams")
@@ -324,6 +326,16 @@ public class ChatActivity extends BaseActivity implements CmdPanelView.CmdListen
         mCmdDailog.dismiss();
         if (cmd != null && !TextUtils.isEmpty(cmd.command)) {
             setMesaage(cmd.command);
+        }
+    }
+
+    @OnClick(R.id.btn_del)
+    void onDelClick() {
+        try {
+            EMClient.getInstance().contactManager().deleteContact(toChatUsername);
+            finish();
+        } catch (HyphenateException e) {
+            Logger.e(e);
         }
     }
 }
