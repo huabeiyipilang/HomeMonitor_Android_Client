@@ -12,7 +12,6 @@ import com.penghaonan.appframework.utils.CollectionUtils;
 import com.penghaonan.appframework.utils.Logger;
 import com.penghaonan.appframework.utils.StringUtils;
 import com.penghaonan.homemonitorclient.App;
-import com.penghaonan.homemonitorclient.R;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -20,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 public class CmdHelper implements App.ICallReceiverListener {
-    private final static String CMD_GET_PROFILE = "getprofile";
+    public final static String CMD_GET_PROFILE = "getprofile";
     private SharedPreferences pref = AppDelegate.getApp().getSharedPreferences("cmd_cache", Context.MODE_PRIVATE);
     private String mServerName;
     private Map<String, CommandData> mCommands = new HashMap<>();
@@ -62,27 +61,32 @@ public class CmdHelper implements App.ICallReceiverListener {
         updateCmds(newdatas);
     }
 
-    public void handleResponse(String response) {
+    public boolean handleProfileResponse(String response) {
         if (TextUtils.isEmpty(response)) {
-            return;
+            return false;
         }
-        if (response.startsWith(CMD_GET_PROFILE) && response.length() > CMD_GET_PROFILE.length() + 1) {
-            String body = response.substring(CMD_GET_PROFILE.length() + 1);
-            List<CommandData> newdatas = JSON.parseArray(body, CommandData.class);
-            if (!CollectionUtils.isEmpty(newdatas)) {
-                pref.edit().putString(mServerName, body).apply();
-                updateCmds(newdatas);
+        if (response.startsWith(CMD_GET_PROFILE)) {
+            if (response.length() > CMD_GET_PROFILE.length() + 1) {
+                String body = response.substring(CMD_GET_PROFILE.length() + 1);
+                List<CommandData> newdatas = JSON.parseArray(body, CommandData.class);
+                if (!CollectionUtils.isEmpty(newdatas)) {
+                    pref.edit().putString(mServerName, body).apply();
+                    updateCmds(newdatas);
+                }
             }
+            return true;
+        }else {
+            return false;
         }
     }
 
     private void updateCmds(List<CommandData> datas) {
         mCommands.clear();
 
-        CommandData cmd = new CommandData();
-        cmd.command = CMD_GET_PROFILE;
-        cmd.description = AppDelegate.getApp().getString(R.string.cmd_get_profile);
-        mCommands.put(cmd.command, cmd);
+//        CommandData cmd = new CommandData();
+//        cmd.command = CMD_GET_PROFILE;
+//        cmd.description = AppDelegate.getApp().getString(R.string.cmd_get_profile);
+//        mCommands.put(cmd.command, cmd);
 
         if (!CollectionUtils.isEmpty(datas)) {
             for (CommandData data : datas) {

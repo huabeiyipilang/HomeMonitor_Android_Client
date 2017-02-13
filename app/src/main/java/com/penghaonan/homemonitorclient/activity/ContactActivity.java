@@ -16,8 +16,10 @@ import android.widget.TextView;
 import com.hyphenate.chat.EMClient;
 import com.penghaonan.appframework.utils.DoubleEventHelper;
 import com.penghaonan.homemonitorclient.App;
+import com.penghaonan.homemonitorclient.BuildConfig;
 import com.penghaonan.homemonitorclient.R;
 import com.penghaonan.homemonitorclient.base.BaseActivity;
+import com.penghaonan.homemonitorclient.cmd.CmdActivity;
 import com.penghaonan.homemonitorclient.db.EaseUser;
 import com.penghaonan.homemonitorclient.utils.EaseCommonUtils;
 
@@ -47,13 +49,24 @@ public class ContactActivity extends BaseActivity implements App.IServerListChan
             }
 
         });
+        if (BuildConfig.DEBUG) {
+            findViewById(R.id.btn_add).setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    startActivity(new Intent(ContactActivity.this, CmdActivity.class));
+                    return true;
+                }
+            });
+        }
         listView = (ListView) this.findViewById(R.id.listView);
         updateContactList();
         listView.setOnItemClickListener(new OnItemClickListener() {
 
             @Override
             public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
-                startActivity(new Intent(ContactActivity.this, ChatActivity.class).putExtra("username", adapter.getItem(arg2).getUsername()));
+                Intent intent = new Intent(ContactActivity.this, CmdActivity.class);
+                intent.putExtra(CmdActivity.EXTRAS_SERVER, adapter.getItem(arg2).getUsername());
+                startActivity(intent);
             }
 
         });

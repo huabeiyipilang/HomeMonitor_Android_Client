@@ -33,4 +33,25 @@ public class ExampleUnitTest {
             log(body);
         }
     }
+
+
+
+    @Test
+    public void testForDongpeng() {
+//        printNum(12345);
+        printNum("123");
+    }
+
+    private void printNum(int num) {
+        if (num > 9) {
+            printNum(num / 10);
+        }
+        System.out.println(String.valueOf(num % 10));
+    }
+
+    private void printNum(String str) {
+        for (char c : str.toCharArray()) {
+            System.out.println(c);
+        }
+    }
 }
