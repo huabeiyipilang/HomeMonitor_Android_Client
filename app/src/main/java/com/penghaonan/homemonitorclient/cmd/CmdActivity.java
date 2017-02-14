@@ -3,17 +3,22 @@ package com.penghaonan.homemonitorclient.cmd;
 import android.app.ProgressDialog;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.hyphenate.EMMessageListener;
 import com.hyphenate.chat.EMClient;
 import com.hyphenate.chat.EMImageMessageBody;
 import com.hyphenate.chat.EMMessage;
 import com.hyphenate.chat.EMTextMessageBody;
+import com.nostra13.universalimageloader.core.ImageLoader;
+import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
 import com.penghaonan.appframework.AppDelegate;
 import com.penghaonan.appframework.utils.UiUtils;
 import com.penghaonan.homemonitorclient.R;
@@ -21,8 +26,10 @@ import com.penghaonan.homemonitorclient.base.BaseActivity;
 import com.penghaonan.homemonitorclient.cmd.db.CmdLog;
 import com.penghaonan.homemonitorclient.cmd.db.DbManager;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
 import butterknife.BindView;
@@ -45,12 +52,22 @@ public class CmdActivity extends BaseActivity {
     private CmdHelper mCmdHelper;
     private ProgressDialog mLoadingDialog;
     private List<CmdLog> mCmdLogList = new ArrayList<>();
+    private CmdAdapter mAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_cmd);
         ButterKnife.bind(this);
+
+        ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder(this).build();
+        ImageLoader mImageLoader = ImageLoader.getInstance();
+        mImageLoader.init(config);
+
+        mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
+        mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        mRecyclerView.setAdapter(mAdapter = new CmdAdapter());
+
         mServerId = this.getIntent().getStringExtra(EXTRAS_SERVER);
         mCmdHelper = new CmdHelper(mServerId);
         mCmdLogList = DbManager.getCmdLogDao().loadAll();
@@ -61,6 +78,11 @@ public class CmdActivity extends BaseActivity {
         mLoadingDialog.show();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateUI();
+    }
 
     private void sendMesaage(String content) {
         // 创建一条文本消息，content为消息文字内容，toChatUsername为对方用户或者群聊的id，后文皆是如此
@@ -77,9 +99,9 @@ public class CmdActivity extends BaseActivity {
         log.setLogType(CmdLog.LOG_TYPE_REQUEST);
         log.setTime(System.currentTimeMillis());
         DbManager.getCmdLogDao().save(log);
-        //TODO 更新界面
-        mCmdLogList.add(log);
 
+        mCmdLogList.add(log);
+        updateUI();
     }
 
     @Override
@@ -152,7 +174,7 @@ public class CmdActivity extends BaseActivity {
         }
         DbManager.getCmdLogDao().save(log);
         mCmdLogList.add(log);
-        //TODO 更新界面
+        updateUI();
     }
 
     private EMMessageListener msgListener = new EMMessageListener() {
@@ -198,28 +220,104 @@ public class CmdActivity extends BaseActivity {
         }
     };
 
-    private class CmdViewHolder extends RecyclerView.ViewHolder {
+    private void updateUI() {
+        mAdapter.notifyDataSetChanged();
+        mRecyclerView.smoothScrollToPosition(mCmdLogList.size());
+    }
 
-        public CmdViewHolder(View itemView) {
+
+    private final static int TYPE_REQUEST_CMD = getTypeId(CmdLog.LOG_TYPE_REQUEST, CmdLog.CONTENT_TYPE_TEXT);
+    private final static int TYPE_RESPONSE_TEXT = getTypeId(CmdLog.LOG_TYPE_RESPONSE, CmdLog.CONTENT_TYPE_TEXT);
+    private final static int TYPE_RESPONSE_IMG = getTypeId(CmdLog.LOG_TYPE_RESPONSE, CmdLog.CONTENT_TYPE_PIC);
+
+    class CmdRequestHolder extends RecyclerView.ViewHolder {
+
+        @BindView(R.id.tv_cmd_title)
+        TextView titleView;
+        @BindView(R.id.tv_cmd_str)
+        TextView cmdView;
+        @BindView(R.id.tv_cmd_time)
+        TextView timeView;
+
+        public CmdRequestHolder(View itemView) {
             super(itemView);
+            ButterKnife.bind(this, itemView);
+        }
+    }
+
+    class CmdResponseTextHolder extends RecyclerView.ViewHolder {
+        @BindView(R.id.iv_txt)
+        TextView textView;
+
+        public CmdResponseTextHolder(View itemView) {
+            super(itemView);
+            ButterKnife.bind(this, itemView);
+        }
+    }
+
+    class CmdResponseImgHolder extends RecyclerView.ViewHolder {
+        @BindView(R.id.iv_pic)
+        ImageView imgView;
+
+        public CmdResponseImgHolder(View itemView) {
+            super(itemView);
+            ButterKnife.bind(this, itemView);
         }
     }
 
     private class CmdAdapter extends RecyclerView.Adapter {
 
+        private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", AppDelegate.getApp().getResources().getConfiguration().locale);
+
         @Override
         public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            return null;
+            if (viewType == TYPE_REQUEST_CMD) {
+                return new CmdRequestHolder(LayoutInflater.from(
+                        CmdActivity.this).inflate(R.layout.item_view_cmdlist_cmd, parent,
+                        false));
+            } else if (viewType == TYPE_RESPONSE_TEXT) {
+                return new CmdResponseTextHolder(LayoutInflater.from(
+                        CmdActivity.this).inflate(R.layout.item_view_cmdlist_response_txt, parent,
+                        false));
+            } else if (viewType == TYPE_RESPONSE_IMG) {
+                return new CmdResponseImgHolder(LayoutInflater.from(
+                        CmdActivity.this).inflate(R.layout.item_view_cmdlist_response_img, parent,
+                        false));
+            } else {
+                return null;
+            }
         }
 
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
-
+            CmdLog cmdLog = mCmdLogList.get(position);
+            if (holder instanceof CmdRequestHolder) {
+                CmdRequestHolder hd = (CmdRequestHolder) holder;
+                hd.titleView.setText(mCmdHelper.getCmdDescription(cmdLog.getContent()));
+                hd.cmdView.setText(cmdLog.getContent());
+                hd.timeView.setText(sdf.format(new Date(cmdLog.getTime())));
+            } else if (holder instanceof CmdResponseTextHolder) {
+                CmdResponseTextHolder hd = (CmdResponseTextHolder) holder;
+                hd.textView.setText(cmdLog.getContent());
+            } else if (holder instanceof CmdResponseImgHolder) {
+                CmdResponseImgHolder hd = (CmdResponseImgHolder) holder;
+                ImageLoader.getInstance().displayImage(cmdLog.getContent(), hd.imgView);
+            }
         }
 
         @Override
         public int getItemCount() {
-            return 0;
+            return mCmdLogList.size();
         }
+
+        @Override
+        public int getItemViewType(int position) {
+            CmdLog cmdLog = mCmdLogList.get(position);
+            return getTypeId(cmdLog.getLogType(), cmdLog.getContentType());
+        }
+    }
+
+    private static int getTypeId(int logType, int contentType) {
+        return logType * 10 + contentType;
     }
 }

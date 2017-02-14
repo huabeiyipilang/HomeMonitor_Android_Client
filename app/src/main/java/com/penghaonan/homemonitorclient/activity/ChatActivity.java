@@ -152,7 +152,7 @@ public class ChatActivity extends BaseActivity implements CmdPanelView.CmdListen
                 if (username.equals(toChatUsername)) {
                     if (message.getBody() instanceof EMTextMessageBody) {
                         EMTextMessageBody textBody = (EMTextMessageBody) message.getBody();
-                        mCmdHelper.handleResponse(textBody.getMessage());
+//                        mCmdHelper.handleResponse(textBody.getMessage());
                     }
                     msgList.addAll(messages);
                     adapter.notifyDataSetChanged();

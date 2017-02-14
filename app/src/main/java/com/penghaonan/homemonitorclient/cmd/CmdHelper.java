@@ -47,6 +47,10 @@ public class CmdHelper implements App.ICallReceiverListener {
         App.getInstance().addCallReceiverListener(this);
     }
 
+    public String getCmdDescription(String cmd) {
+        return mCommands.get(cmd).description;
+    }
+
     public void setOnCmdChangedListener(OnCmdChangedListener listener) {
         mListener = listener;
     }
@@ -75,7 +79,7 @@ public class CmdHelper implements App.ICallReceiverListener {
                 }
             }
             return true;
-        }else {
+        } else {
             return false;
         }
     }

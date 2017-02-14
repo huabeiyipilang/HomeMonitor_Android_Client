@@ -3,30 +3,32 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#dee5f3"
+    android:padding="@dimen/cmd_item_view_padding"
     android:orientation="vertical">
 
-    <LinearLayout
-        android:layout_width="match_parent"
+    <TextView
+        android:id="@+id/tv_cmd_title"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="bottom">
+        android:textColor="#333333"
+        android:textSize="20sp"
+        tools:text="拍照" />
 
-        <TextView
-            android:id="@+id/tv_cmd_title"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:textSize="24sp"
-            android:textColor="#333333"
-            tools:text="拍照"/>
+    <TextView
+        android:id="@+id/tv_cmd_str"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#666666"
+        android:textSize="16sp"
+        tools:text="takepic" />
 
-
-        <TextView
-            android:id="@+id/tv_cmd_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="16sp"
-            android:textColor="#666666"
-            tools:text="2017-02-14 21:30:06"/>
-    </LinearLayout>
+    <TextView
+        android:id="@+id/tv_cmd_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#666666"
+        android:textSize="16sp"
+        tools:text="2017-02-14 21:30:06" />
 
 </LinearLayout>
