@@ -18,4 +18,9 @@ public class CmdResponse {
      * 消息
      */
     public String msg;
+
+    /**
+     * 服务器
+     */
+    public String serverId;
 }
