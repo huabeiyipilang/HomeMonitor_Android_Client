@@ -6,6 +6,12 @@
     android:layout_height="match_parent"
     tools:context="com.penghaonan.homemonitorclient.cmd.CmdActivity">
 
+    <TextView
+        android:id="@+id/view_torch_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+
     <GridView
         android:id="@+id/grid_view"
         android:layout_width="match_parent"

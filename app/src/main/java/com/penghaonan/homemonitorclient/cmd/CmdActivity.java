@@ -34,10 +34,14 @@ public class CmdActivity extends BaseCmdActivity {
     @BindView(R.id.grid_view)
     GridView mGridView;
 
+    @BindView(R.id.view_torch_status)
+    TextView mTorchStatusView;
+
     private CmdHelper mCmdHelper;
     private ProgressDialog mLoadingDialog;
     private CmdRequest mProfileRequest;
     private CmdAdapter mCmdAdapter;
+    private boolean mTouchOn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,13 +87,17 @@ public class CmdActivity extends BaseCmdActivity {
     public void onResponseReceived(CmdResponse response) {
         if (mProfileRequest != null && response != null && response.id == mProfileRequest.id) {
             JSONObject object = JSON.parseObject(response.msg);
-            boolean torchON = object.getBoolean("torch_status");
+            mTouchOn = object.getBoolean("torch_status");
+            updateTorchStatus();
             List<CommandData> newdatas = JSON.parseArray(object.getString("cmd_profile"), CommandData.class);
             mCmdHelper.handleProfileResponse(newdatas);
             mLoadingDialog.dismiss();
-        } else {
-
+            mProfileRequest = null;
         }
+    }
+
+    private void updateTorchStatus() {
+        mTorchStatusView.setText(getString(R.string.torch_status_info, (mTouchOn ? getString(R.string.on) : getString(R.string.off))));
     }
 
     @Override
