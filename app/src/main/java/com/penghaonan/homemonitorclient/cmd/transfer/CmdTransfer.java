@@ -1,5 +1,6 @@
 package com.penghaonan.homemonitorclient.cmd.transfer;
 
+import android.support.v4.util.LongSparseArray;
 import android.text.TextUtils;
 
 import com.alibaba.fastjson.JSON;
@@ -10,7 +11,10 @@ import com.hyphenate.chat.EMMessage;
 import com.hyphenate.chat.EMTextMessageBody;
 import com.penghaonan.appframework.AppDelegate;
 import com.penghaonan.appframework.utils.CollectionUtils;
+import com.penghaonan.appframework.utils.Logger;
 import com.penghaonan.homemonitorclient.cmd.CommandData;
+import com.penghaonan.homemonitorclient.cmd.handler.ACmdHandler;
+import com.penghaonan.homemonitorclient.cmd.handler.CmdHandlerFactory;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,7 +24,7 @@ import java.util.Set;
 
 public class CmdTransfer implements EMMessageListener {
     private static CmdTransfer ourInstance = new CmdTransfer();
-    private Map<String, Set<CmdListener>> mListenerMap = new HashMap<>();
+    private LongSparseArray<ACmdHandler> mRequestArray = new LongSparseArray<>();
 
     private CmdTransfer() {
         EMClient.getInstance().chatManager().addMessageListener(this);
@@ -31,36 +35,36 @@ public class CmdTransfer implements EMMessageListener {
     }
 
     /**
-     * 注册对应服务器的监听
+     * 发送命令
      */
-    public void addCmdListener(String serverId, CmdListener listener) {
-        Set<CmdListener> listenerSet = mListenerMap.get(serverId);
-        if (listenerSet == null) {
-            listenerSet = new HashSet<>();
-            mListenerMap.put(serverId, listenerSet);
-        }
-        listenerSet.add(listener);
-    }
-
-    /**
-     * 取消对应服务器的监听
-     */
-    public void removeCmdListener(String serverId, CmdListener listener) {
-        Set<CmdListener> listenerSet = mListenerMap.get(serverId);
-        if (listenerSet != null) {
-            listenerSet.remove(listener);
-        }
+    public CmdRequest sendCmd(String mServerId, CommandData cmd) {
+        CmdRequest request = cmd.createRequest();
+        request.id = System.currentTimeMillis();
+        EMMessage message = EMMessage.createTxtSendMessage(JSON.toJSONString(request), mServerId);
+        EMClient.getInstance().chatManager().sendMessage(message);
+        return request;
     }
 
     /**
      * 发送命令
      */
-    public CmdRequest sendCmd(String mServerId, CommandData cmd) {
-        CmdRequest request = JSON.parseObject(cmd.command, CmdRequest.class);
+    public long sendCmd(String serverId, CommandData cmd, CmdRequestListener listener) {
+        CmdRequest request = cmd.createRequest();
         request.id = System.currentTimeMillis();
-        EMMessage message = EMMessage.createTxtSendMessage(JSON.toJSONString(request), mServerId);
+        EMMessage message = EMMessage.createTxtSendMessage(JSON.toJSONString(request), serverId);
         EMClient.getInstance().chatManager().sendMessage(message);
-        return request;
+
+        ACmdHandler cmdHandler = CmdHandlerFactory.createCmdHandler(request.cmd);
+        if (cmdHandler == null) {
+            Logger.e("Cmd handler is null");
+            return -1;
+        }
+        cmdHandler.setServerId(serverId);
+        cmdHandler.setCmdData(cmd);
+        cmdHandler.setListener(listener);
+        cmdHandler.setRequest(request);
+        mRequestArray.put(request.id, cmdHandler);
+        return request.id;
     }
 
     @Override
@@ -85,17 +89,8 @@ public class CmdTransfer implements EMMessageListener {
                     if (response == null) {
                         continue;
                     }
-                    Set<CmdListener> listenerSet = mListenerMap.get(serverId);
-                    if (!CollectionUtils.isEmpty(listenerSet)) {
-                        for (final CmdListener listener : listenerSet) {
-                            AppDelegate.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    listener.onResponseReceived(response);
-                                }
-                            });
-                        }
-                    }
+                    ACmdHandler handler = mRequestArray.get(response.id);
+                    handler.onResponseReceived(response);
                 } else if (message.getBody() instanceof EMImageMessageBody) {
                     //处理图片信息
                     EMImageMessageBody imgBody = (EMImageMessageBody) message.getBody();
@@ -103,15 +98,11 @@ public class CmdTransfer implements EMMessageListener {
                     if (TextUtils.isEmpty(imgUrl)) {
                         continue;
                     }
-                    Set<CmdListener> listenerSet = mListenerMap.get(serverId);
-                    if (!CollectionUtils.isEmpty(listenerSet)) {
-                        for (final CmdListener listener : listenerSet) {
-                            AppDelegate.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    listener.onImageReceived(imgUrl);
-                                }
-                            });
+                    ACmdHandler handler;
+                    for (int i = 0; i < mRequestArray.size(); i ++) {
+                        handler = mRequestArray.valueAt(i);
+                        if (handler.onImageReceived(imgUrl)) {
+                            return;
                         }
                     }
                 }
@@ -137,11 +128,5 @@ public class CmdTransfer implements EMMessageListener {
     @Override
     public void onMessageChanged(EMMessage message, Object change) {
 
-    }
-
-    public interface CmdListener {
-        void onResponseReceived(CmdResponse response);
-
-        void onImageReceived(String remoteUrl);
     }
 }
