@@ -12,6 +12,7 @@ import com.penghaonan.appframework.utils.CollectionUtils;
 import com.penghaonan.appframework.utils.Logger;
 import com.penghaonan.appframework.utils.StringUtils;
 import com.penghaonan.homemonitorclient.App;
+import com.penghaonan.homemonitorclient.R;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -48,6 +49,10 @@ public class CmdHelper implements App.ICallReceiverListener {
     }
 
     public String getCmdDescription(String cmd) {
+        CommandData commandData = mCommands.get(cmd);
+        if (commandData == null || TextUtils.isEmpty(commandData.description)) {
+            return AppDelegate.getString(R.string.unknown_command);
+        }
         return mCommands.get(cmd).description;
     }
 

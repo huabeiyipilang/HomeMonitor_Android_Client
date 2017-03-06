@@ -1,6 +1,8 @@
 package com.penghaonan.homemonitorclient.cmd;
 
 import android.app.ProgressDialog;
+import android.graphics.Bitmap;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.widget.LinearLayoutManager;
@@ -17,9 +19,11 @@ import com.hyphenate.chat.EMClient;
 import com.hyphenate.chat.EMImageMessageBody;
 import com.hyphenate.chat.EMMessage;
 import com.hyphenate.chat.EMTextMessageBody;
+import com.hyphenate.exceptions.HyphenateException;
+import com.nostra13.universalimageloader.core.DisplayImageOptions;
 import com.nostra13.universalimageloader.core.ImageLoader;
-import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
 import com.penghaonan.appframework.AppDelegate;
+import com.penghaonan.appframework.utils.Logger;
 import com.penghaonan.appframework.utils.UiUtils;
 import com.penghaonan.homemonitorclient.R;
 import com.penghaonan.homemonitorclient.base.BaseActivity;
@@ -34,6 +38,7 @@ import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 import terranovaproductions.newcomicreader.FloatingActionMenu;
 
 import static com.penghaonan.homemonitorclient.cmd.CmdHelper.CMD_GET_PROFILE;
@@ -41,18 +46,80 @@ import static com.penghaonan.homemonitorclient.cmd.CmdHelper.CMD_GET_PROFILE;
 public class CmdActivity extends BaseActivity {
 
     public final static String EXTRAS_SERVER = "EXTRAS_SERVER";
-
+    private final static int TYPE_REQUEST_CMD = getTypeId(CmdLog.LOG_TYPE_REQUEST, CmdLog.CONTENT_TYPE_TEXT);
+    private final static int TYPE_RESPONSE_TEXT = getTypeId(CmdLog.LOG_TYPE_RESPONSE, CmdLog.CONTENT_TYPE_TEXT);
+    private final static int TYPE_RESPONSE_IMG = getTypeId(CmdLog.LOG_TYPE_RESPONSE, CmdLog.CONTENT_TYPE_PIC);
+    private static DisplayImageOptions sWallpaperListOptions;
     @BindView(R.id.root_view)
     ViewGroup mRootView;
-
     @BindView(R.id.recycler_view)
     RecyclerView mRecyclerView;
-
     private String mServerId;
     private CmdHelper mCmdHelper;
     private ProgressDialog mLoadingDialog;
     private List<CmdLog> mCmdLogList = new ArrayList<>();
     private CmdAdapter mAdapter;
+    private EMMessageListener msgListener = new EMMessageListener() {
+
+        @Override
+        public void onMessageReceived(List<EMMessage> messages) {
+
+            for (EMMessage message : messages) {
+                String username;
+                // 群组消息
+                if (message.getChatType() == EMMessage.ChatType.GroupChat || message.getChatType() == EMMessage.ChatType.ChatRoom) {
+                    username = message.getTo();
+                } else {
+                    // 单聊消息
+                    username = message.getFrom();
+                }
+                // 如果是当前会话的消息，刷新聊天页面
+
+                if (username.equals(mServerId)) {
+                    handleMsgReceived(message);
+                }
+            }
+        }
+
+        @Override
+        public void onCmdMessageReceived(List<EMMessage> messages) {
+            // 收到透传消息
+        }
+
+        @Override
+        public void onMessageRead(List<EMMessage> messages) {
+
+        }
+
+        @Override
+        public void onMessageDelivered(List<EMMessage> messages) {
+
+        }
+
+        @Override
+        public void onMessageChanged(EMMessage message, Object change) {
+            // 消息状态变动
+        }
+    };
+
+    private static int getTypeId(int logType, int contentType) {
+        return logType * 10 + contentType;
+    }
+
+    private static DisplayImageOptions getImgOptions() {
+        if (sWallpaperListOptions == null) {
+            synchronized (CmdActivity.class) {
+                if (sWallpaperListOptions == null) {
+                    sWallpaperListOptions = new DisplayImageOptions.Builder()
+                            .cacheInMemory(false)
+                            .cacheOnDisk(true)
+                            .bitmapConfig(Bitmap.Config.RGB_565)
+                            .build();
+                }
+            }
+        }
+        return sWallpaperListOptions;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,15 +127,14 @@ public class CmdActivity extends BaseActivity {
         setContentView(R.layout.activity_cmd);
         ButterKnife.bind(this);
 
-        ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder(this).build();
-        ImageLoader mImageLoader = ImageLoader.getInstance();
-        mImageLoader.init(config);
-
         mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         mRecyclerView.setAdapter(mAdapter = new CmdAdapter());
+        int spacingInPixels = getResources().getDimensionPixelSize(R.dimen.cmd_item_h_divider);
+        mRecyclerView.addItemDecoration(new SpaceItemDecoration(spacingInPixels));
 
         mServerId = this.getIntent().getStringExtra(EXTRAS_SERVER);
+        ((TextView) findViewById(R.id.tv_server)).setText(mServerId);
         mCmdHelper = new CmdHelper(mServerId);
         mCmdLogList = DbManager.getCmdLogDao().loadAll();
         EMClient.getInstance().chatManager().addMessageListener(msgListener);
@@ -177,58 +243,25 @@ public class CmdActivity extends BaseActivity {
         updateUI();
     }
 
-    private EMMessageListener msgListener = new EMMessageListener() {
-
-        @Override
-        public void onMessageReceived(List<EMMessage> messages) {
-
-            for (EMMessage message : messages) {
-                String username;
-                // 群组消息
-                if (message.getChatType() == EMMessage.ChatType.GroupChat || message.getChatType() == EMMessage.ChatType.ChatRoom) {
-                    username = message.getTo();
-                } else {
-                    // 单聊消息
-                    username = message.getFrom();
-                }
-                // 如果是当前会话的消息，刷新聊天页面
-
-                if (username.equals(mServerId)) {
-                    handleMsgReceived(message);
-                }
-            }
-        }
-
-        @Override
-        public void onCmdMessageReceived(List<EMMessage> messages) {
-            // 收到透传消息
-        }
-
-        @Override
-        public void onMessageRead(List<EMMessage> messages) {
-
-        }
-
-        @Override
-        public void onMessageDelivered(List<EMMessage> messages) {
-
-        }
-
-        @Override
-        public void onMessageChanged(EMMessage message, Object change) {
-            // 消息状态变动
-        }
-    };
-
     private void updateUI() {
         mAdapter.notifyDataSetChanged();
-        mRecyclerView.smoothScrollToPosition(mCmdLogList.size());
+        AppDelegate.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                mRecyclerView.smoothScrollToPosition(mCmdLogList.size());
+            }
+        }, 500);
     }
 
-
-    private final static int TYPE_REQUEST_CMD = getTypeId(CmdLog.LOG_TYPE_REQUEST, CmdLog.CONTENT_TYPE_TEXT);
-    private final static int TYPE_RESPONSE_TEXT = getTypeId(CmdLog.LOG_TYPE_RESPONSE, CmdLog.CONTENT_TYPE_TEXT);
-    private final static int TYPE_RESPONSE_IMG = getTypeId(CmdLog.LOG_TYPE_RESPONSE, CmdLog.CONTENT_TYPE_PIC);
+    @OnClick(R.id.btn_del)
+    void onDeleteServerClick() {
+        try {
+            EMClient.getInstance().contactManager().deleteContact(mServerId);
+            finish();
+        } catch (HyphenateException e) {
+            Logger.e(e);
+        }
+    }
 
     class CmdRequestHolder extends RecyclerView.ViewHolder {
 
@@ -301,7 +334,7 @@ public class CmdActivity extends BaseActivity {
                 hd.textView.setText(cmdLog.getContent());
             } else if (holder instanceof CmdResponseImgHolder) {
                 CmdResponseImgHolder hd = (CmdResponseImgHolder) holder;
-                ImageLoader.getInstance().displayImage(cmdLog.getContent(), hd.imgView);
+                ImageLoader.getInstance().displayImage(cmdLog.getContent(), hd.imgView, getImgOptions());
             }
         }
 
@@ -317,7 +350,19 @@ public class CmdActivity extends BaseActivity {
         }
     }
 
-    private static int getTypeId(int logType, int contentType) {
-        return logType * 10 + contentType;
+    private class SpaceItemDecoration extends RecyclerView.ItemDecoration {
+
+        private int space;
+
+        public SpaceItemDecoration(int space) {
+            this.space = space;
+        }
+
+        @Override
+        public void getItemOffsets(Rect outRect, View view, RecyclerView parent, RecyclerView.State state) {
+
+            if (parent.getChildPosition(view) != 0)
+                outRect.top = space;
+        }
     }
 }

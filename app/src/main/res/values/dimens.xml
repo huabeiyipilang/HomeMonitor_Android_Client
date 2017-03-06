@@ -18,5 +18,6 @@
     <dimen name="image_thumbnail_size">100dp</dimen>
     <dimen name="image_thumbnail_spacing">1dp</dimen>
 
-    <dimen name="cmd_item_view_padding">5dp</dimen>
+    <dimen name="cmd_item_view_padding">10dp</dimen>
+    <dimen name="cmd_item_h_divider">5dp</dimen>
 </resources>

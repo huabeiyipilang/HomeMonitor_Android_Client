@@ -14,15 +14,20 @@ import com.hyphenate.EMCallBack;
 import com.hyphenate.EMContactListener;
 import com.hyphenate.chat.EMClient;
 import com.hyphenate.chat.EMOptions;
+import com.nostra13.universalimageloader.cache.disc.impl.UnlimitedDiskCache;
+import com.nostra13.universalimageloader.cache.memory.impl.WeakMemoryCache;
+import com.nostra13.universalimageloader.core.DisplayImageOptions;
+import com.nostra13.universalimageloader.core.ImageLoader;
+import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
 import com.penghaonan.appframework.AppDelegate;
-import com.penghaonan.appframework.BuildConfig;
-import com.penghaonan.appframework.utils.Logger;
+import com.penghaonan.appframework.utils.StorageUtils;
 import com.penghaonan.homemonitorclient.db.EaseUser;
 import com.penghaonan.homemonitorclient.db.InviteMessage;
 import com.penghaonan.homemonitorclient.db.InviteMessgeDao;
 import com.penghaonan.homemonitorclient.db.Myinfo;
 import com.penghaonan.homemonitorclient.db.UserDao;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -37,12 +42,24 @@ public class App extends Application {
     private String username = "";
     private Map<String, EaseUser> contactList;
     private InviteMessgeDao inviteMessgeDao;
+    private UserDao userDao;
+    private boolean sdkInited = false;
+
+    /*
+     * 第一步：sdk的一些参数配置 EMOptions 第二步：将配置参数封装类 传入SDK初始化
+     */
+    private List<IServerListChangedListener> mServerChangedListeners = new LinkedList<>();
+    private List<ICallReceiverListener> mCallReceiverListeners = new LinkedList<>();
+
+    public static App getInstance() {
+        return instance;
+    }
 
     @Override
     public void onCreate() {
         super.onCreate();
         AppDelegate.init(this);
-        Logger.setEnable(BuildConfig.DEBUG);
+        StorageUtils.setRootDir("HomeMonitor");
         applicationContext = this;
         instance = this;
         // 初始化环信sdk
@@ -52,15 +69,19 @@ public class App extends Application {
 
         IntentFilter callFilter = new IntentFilter(EMClient.getInstance().callManager().getIncomingCallBroadcastAction());
         registerReceiver(new CallReceiver(), callFilter);
+        initImageLoader();
     }
 
-    public static App getInstance() {
-        return instance;
+    private void initImageLoader() {
+        File imgCacheFile = new File(StorageUtils.getExternalFolder(), "imgcache");
+        ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder(this)
+                .diskCacheSize(10 * 1024 * 1024)
+                .diskCache(new UnlimitedDiskCache(imgCacheFile))
+                .memoryCache(new WeakMemoryCache())
+                .build();
+        ImageLoader mImageLoader = ImageLoader.getInstance();
+        mImageLoader.init(config);
     }
-
-	/*
-     * 第一步：sdk的一些参数配置 EMOptions 第二步：将配置参数封装类 传入SDK初始化
-	 */
 
     public void init(Context context) {
         // 第一步
@@ -79,11 +100,6 @@ public class App extends Application {
         userDao = new UserDao(context);
     }
 
-    public void setCurrentUserName(String username) {
-        this.username = username;
-        Myinfo.getInstance(instance).setUserInfo(Constant.KEY_USERNAME, username);
-    }
-
     public String getCurrentUserName() {
         if (TextUtils.isEmpty(username)) {
             username = Myinfo.getInstance(instance).getUserInfo(Constant.KEY_USERNAME);
@@ -93,7 +109,10 @@ public class App extends Application {
 
     }
 
-    private UserDao userDao;
+    public void setCurrentUserName(String username) {
+        this.username = username;
+        Myinfo.getInstance(instance).setUserInfo(Constant.KEY_USERNAME, username);
+    }
 
     private EMOptions initChatOptions() {
 
@@ -107,8 +126,6 @@ public class App extends Application {
         options.setRequireDeliveryAck(false);
         return options;
     }
-
-    private boolean sdkInited = false;
 
     public synchronized boolean initSDK(Context context, EMOptions options) {
         if (sdkInited) {
@@ -163,14 +180,6 @@ public class App extends Application {
         return processName;
     }
 
-    public void setContactList(Map<String, EaseUser> contactList) {
-
-        this.contactList = contactList;
-
-        userDao.saveContactList(new ArrayList<EaseUser>(contactList.values()));
-
-    }
-
     public Map<String, EaseUser> getContactList() {
 
         if (contactList == null) {
@@ -179,6 +188,14 @@ public class App extends Application {
 
         }
         return contactList;
+
+    }
+
+    public void setContactList(Map<String, EaseUser> contactList) {
+
+        this.contactList = contactList;
+
+        userDao.saveContactList(new ArrayList<EaseUser>(contactList.values()));
 
     }
 
@@ -342,8 +359,6 @@ public class App extends Application {
         });
     }
 
-    private List<IServerListChangedListener> mServerChangedListeners = new LinkedList<>();
-
     public void addServerListChangedListener(IServerListChangedListener listener) {
         if (!mServerChangedListeners.contains(listener)) {
             mServerChangedListeners.add(listener);
@@ -356,12 +371,6 @@ public class App extends Application {
         }
     }
 
-    public interface IServerListChangedListener {
-        void onServerListChanged();
-    }
-
-    private List<ICallReceiverListener> mCallReceiverListeners = new LinkedList<>();
-
     public void addCallReceiverListener(ICallReceiverListener listener) {
         if (!mCallReceiverListeners.contains(listener)) {
             mCallReceiverListeners.add(listener);
@@ -372,6 +381,10 @@ public class App extends Application {
         if (mCallReceiverListeners.contains(listener)) {
             mCallReceiverListeners.remove(listener);
         }
+    }
+
+    public interface IServerListChangedListener {
+        void onServerListChanged();
     }
 
     public interface ICallReceiverListener {
