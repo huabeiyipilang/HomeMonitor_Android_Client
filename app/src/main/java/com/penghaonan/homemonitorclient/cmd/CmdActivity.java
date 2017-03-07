@@ -3,6 +3,7 @@ package com.penghaonan.homemonitorclient.cmd;
 import android.app.ProgressDialog;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.widget.LinearLayoutManager;
@@ -64,7 +65,7 @@ public class CmdActivity extends BaseActivity {
         @Override
         public void onMessageReceived(List<EMMessage> messages) {
 
-            for (EMMessage message : messages) {
+            for (final EMMessage message : messages) {
                 String username;
                 // 群组消息
                 if (message.getChatType() == EMMessage.ChatType.GroupChat || message.getChatType() == EMMessage.ChatType.ChatRoom) {
@@ -76,7 +77,12 @@ public class CmdActivity extends BaseActivity {
                 // 如果是当前会话的消息，刷新聊天页面
 
                 if (username.equals(mServerId)) {
-                    handleMsgReceived(message);
+                    AppDelegate.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            handleMsgReceived(message);
+                        }
+                    });
                 }
             }
         }
@@ -147,7 +153,7 @@ public class CmdActivity extends BaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        updateUI();
+        updateUI(false);
     }
 
     private void sendMesaage(String content) {
@@ -167,7 +173,7 @@ public class CmdActivity extends BaseActivity {
         DbManager.getCmdLogDao().save(log);
 
         mCmdLogList.add(log);
-        updateUI();
+        updateUI(true);
     }
 
     @Override
@@ -180,6 +186,7 @@ public class CmdActivity extends BaseActivity {
     private void initCmdMenu() {
         FloatingActionMenu actionMenu = (FloatingActionMenu) LayoutInflater.from(this).inflate(
                 R.layout.floating_action_menu, mRootView, false);
+        actionMenu.setBackground(new ColorDrawable(0x33000000));
 
         //点击展开按钮
         FloatingActionButton actionButton = (FloatingActionButton) LayoutInflater.from(this).inflate(
@@ -240,17 +247,16 @@ public class CmdActivity extends BaseActivity {
         }
         DbManager.getCmdLogDao().save(log);
         mCmdLogList.add(log);
-        updateUI();
+        updateUI(true);
     }
 
-    private void updateUI() {
+    private void updateUI(boolean anim) {
         mAdapter.notifyDataSetChanged();
-        AppDelegate.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                mRecyclerView.smoothScrollToPosition(mCmdLogList.size());
-            }
-        }, 500);
+        if (anim) {
+            mRecyclerView.smoothScrollToPosition(mCmdLogList.size() - 1);
+        } else {
+            mRecyclerView.scrollToPosition(mCmdLogList.size() - 1);
+        }
     }
 
     @OnClick(R.id.btn_del)

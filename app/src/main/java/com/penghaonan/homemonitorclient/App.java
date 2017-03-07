@@ -16,10 +16,10 @@ import com.hyphenate.chat.EMClient;
 import com.hyphenate.chat.EMOptions;
 import com.nostra13.universalimageloader.cache.disc.impl.UnlimitedDiskCache;
 import com.nostra13.universalimageloader.cache.memory.impl.WeakMemoryCache;
-import com.nostra13.universalimageloader.core.DisplayImageOptions;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
 import com.penghaonan.appframework.AppDelegate;
+import com.penghaonan.appframework.utils.Logger;
 import com.penghaonan.appframework.utils.StorageUtils;
 import com.penghaonan.homemonitorclient.db.EaseUser;
 import com.penghaonan.homemonitorclient.db.InviteMessage;
@@ -59,6 +59,7 @@ public class App extends Application {
     public void onCreate() {
         super.onCreate();
         AppDelegate.init(this);
+        Logger.setEnable(BuildConfig.DEBUG);
         StorageUtils.setRootDir("HomeMonitor");
         applicationContext = this;
         instance = this;
