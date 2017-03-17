@@ -89,7 +89,10 @@
             android:screenOrientation="portrait"
             tools:replace="screenOrientation" />
         <activity android:name=".cmd.VideoCallActivity" />
-        <activity android:name=".cmd.CmdActivity"></activity>
+        <activity android:name=".cmd.CmdActivity" />
+        <activity
+            android:name=".cmd.ImageViewrActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen" />
     </application>
 
 </manifest>

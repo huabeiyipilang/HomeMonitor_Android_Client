@@ -12,4 +12,6 @@
     <string name="add_server_scan_btn">扫码</string>
     <string name="loading_server">正在建立连接</string>
     <string name="unknown_command">未知命令</string>
+
+    <string name="video_call_connecting">正在连接</string>
 </resources>

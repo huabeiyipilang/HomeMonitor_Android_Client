@@ -6,7 +6,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.3.0-beta3'
+        classpath 'com.android.tools.build:gradle:2.3.0'
         classpath 'com.neenbedankt.gradle.plugins:android-apt:1.8'
         classpath 'org.greenrobot:greendao-gradle-plugin:3.2.1'
 
@@ -18,7 +18,13 @@ buildscript {
 allprojects {
     repositories {
         jcenter()
-        maven { url "https://raw.githubusercontent.com/HyphenateInc/Hyphenate-SDK-Android/master/repository" }
+        maven {
+            url "https://raw.githubusercontent.com/HyphenateInc/Hyphenate-SDK-Android/master/repository"
+        }
+        maven {
+            url "http://dl.bintray.com/piasy/maven"
+        }
+        mavenCentral()
     }
 }
 

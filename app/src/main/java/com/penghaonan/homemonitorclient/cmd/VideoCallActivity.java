@@ -42,7 +42,7 @@ public class VideoCallActivity extends BaseActivity {
             public void onCallStateChanged(CallState callState, CallError error) {
                 switch (callState) {
                     case CONNECTING: // 正在连接对方
-                        showTips("正在连接");
+                        showTips(getString(R.string.video_call_connecting));
                         break;
                     case CONNECTED: // 双方已经建立连接
                         showTips("连接已建立");

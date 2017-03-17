@@ -1,5 +1,6 @@
 package com.penghaonan.homemonitorclient.cmd;
 
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
@@ -27,13 +28,14 @@ import com.penghaonan.appframework.AppDelegate;
 import com.penghaonan.appframework.utils.Logger;
 import com.penghaonan.appframework.utils.UiUtils;
 import com.penghaonan.homemonitorclient.R;
-import com.penghaonan.homemonitorclient.base.BaseActivity;
 import com.penghaonan.homemonitorclient.cmd.db.CmdLog;
+import com.penghaonan.homemonitorclient.cmd.db.CmdLogDao;
 import com.penghaonan.homemonitorclient.cmd.db.DbManager;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -44,7 +46,7 @@ import terranovaproductions.newcomicreader.FloatingActionMenu;
 
 import static com.penghaonan.homemonitorclient.cmd.CmdHelper.CMD_GET_PROFILE;
 
-public class CmdActivity extends BaseActivity {
+public class CmdActivity extends Activity {
 
     public final static String EXTRAS_SERVER = "EXTRAS_SERVER";
     private final static int TYPE_REQUEST_CMD = getTypeId(CmdLog.LOG_TYPE_REQUEST, CmdLog.CONTENT_TYPE_TEXT);
@@ -142,7 +144,7 @@ public class CmdActivity extends BaseActivity {
         mServerId = this.getIntent().getStringExtra(EXTRAS_SERVER);
         ((TextView) findViewById(R.id.tv_server)).setText(mServerId);
         mCmdHelper = new CmdHelper(mServerId);
-        mCmdLogList = DbManager.getCmdLogDao().loadAll();
+        mCmdLogList.addAll(getAllLogFromDb());
         EMClient.getInstance().chatManager().addMessageListener(msgListener);
         sendMesaage(CMD_GET_PROFILE);
         mLoadingDialog = new ProgressDialog(this);
@@ -269,6 +271,16 @@ public class CmdActivity extends BaseActivity {
         }
     }
 
+    private List<CmdLog> getAllLogFromDb() {
+        List<CmdLog> list = DbManager.getCmdLogDao().queryBuilder()
+                .where(CmdLogDao.Properties.Server.eq(mServerId))
+                .orderDesc(CmdLogDao.Properties.Time)
+                .limit(50)
+                .list();
+        Collections.reverse(list);
+        return list;
+    }
+
     class CmdRequestHolder extends RecyclerView.ViewHolder {
 
         @BindView(R.id.tv_cmd_title)
@@ -278,7 +290,7 @@ public class CmdActivity extends BaseActivity {
         @BindView(R.id.tv_cmd_time)
         TextView timeView;
 
-        public CmdRequestHolder(View itemView) {
+        CmdRequestHolder(View itemView) {
             super(itemView);
             ButterKnife.bind(this, itemView);
         }
@@ -288,7 +300,7 @@ public class CmdActivity extends BaseActivity {
         @BindView(R.id.iv_txt)
         TextView textView;
 
-        public CmdResponseTextHolder(View itemView) {
+        CmdResponseTextHolder(View itemView) {
             super(itemView);
             ButterKnife.bind(this, itemView);
         }
@@ -298,9 +310,17 @@ public class CmdActivity extends BaseActivity {
         @BindView(R.id.iv_pic)
         ImageView imgView;
 
-        public CmdResponseImgHolder(View itemView) {
+        CmdResponseImgHolder(View itemView) {
             super(itemView);
             ButterKnife.bind(this, itemView);
+            imgView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    int position = getAdapterPosition();
+                    CmdLog cmdLog = mCmdLogList.get(position);
+                    ImageViewrActivity.showImage(CmdActivity.this, cmdLog.getContent());
+                }
+            });
         }
     }
 
@@ -360,14 +380,14 @@ public class CmdActivity extends BaseActivity {
 
         private int space;
 
-        public SpaceItemDecoration(int space) {
+        SpaceItemDecoration(int space) {
             this.space = space;
         }
 
         @Override
         public void getItemOffsets(Rect outRect, View view, RecyclerView parent, RecyclerView.State state) {
 
-            if (parent.getChildPosition(view) != 0)
+            if (parent.getChildAdapterPosition(view) != 0)
                 outRect.top = space;
         }
     }

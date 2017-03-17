@@ -38,4 +38,7 @@ dependencies {
     testCompile 'junit:junit:4.12'
     apt 'com.jakewharton:butterknife-compiler:8.4.0'
     compile 'com.novaapps:FloatingActionMenu:1.0'
+    compile 'com.github.piasy:BigImageViewer:1.2.5'
+    compile 'com.github.piasy:FrescoImageLoader:1.2.5'
+    compile 'com.github.piasy:ProgressPieIndicator:1.2.5'
 }
