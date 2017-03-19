@@ -14,7 +14,18 @@ android {
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         useLibrary 'org.apache.http.legacy'
     }
+    signingConfigs {
+        debug{
+            storeFile file("hm_sign.jks")
+            storePassword "zhenjiba2"
+            keyAlias "client"
+            keyPassword "client"
+        }
+    }
     buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
