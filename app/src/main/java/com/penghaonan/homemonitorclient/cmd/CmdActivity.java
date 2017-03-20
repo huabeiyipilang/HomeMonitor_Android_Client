@@ -193,15 +193,21 @@ public class CmdActivity extends Activity {
         //点击展开按钮
         FloatingActionButton actionButton = (FloatingActionButton) LayoutInflater.from(this).inflate(
                 R.layout.view_floating_action_btn_mini, actionMenu, false);
+        actionButton.setImageDrawable(getResources().getDrawable(R.mipmap.ic_float_menu_cmd));
         actionMenu.addView(actionButton);
         actionMenu.setmItemGap(UiUtils.dip2Px(AppDelegate.getApp(), 10));
 
         Collection<CommandData> cmds = mCmdHelper.getCmd();
+        DisplayImageOptions cmdIconOptions = new DisplayImageOptions.Builder()
+                .cacheInMemory(false)
+                .cacheOnDisk(true)
+                .build();
         for (CommandData cmd : cmds) {
             actionButton = (FloatingActionButton) LayoutInflater.from(this).inflate(
                     R.layout.view_floating_action_btn_mini, actionMenu, false);
             actionButton.setContentDescription(cmd.description);
             actionButton.setTag(R.id.root_view, cmd);
+            ImageLoader.getInstance().displayImage(cmd.imgUrl, actionButton, cmdIconOptions);
             actionMenu.addView(actionButton);
         }
 
