@@ -10,6 +10,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.facebook.stetho.Stetho;
 import com.hyphenate.EMCallBack;
 import com.hyphenate.EMContactListener;
 import com.hyphenate.chat.EMClient;
@@ -61,6 +62,7 @@ public class App extends Application {
         AppDelegate.init(this);
         Logger.setEnable(BuildConfig.DEBUG);
         StorageUtils.setRootDir("HomeMonitor");
+        Stetho.initializeWithDefaults(this);
         applicationContext = this;
         instance = this;
         // 初始化环信sdk

@@ -52,4 +52,5 @@ dependencies {
     compile 'com.github.piasy:BigImageViewer:1.2.5'
     compile 'com.github.piasy:FrescoImageLoader:1.2.5'
     compile 'com.github.piasy:ProgressPieIndicator:1.2.5'
+    compile 'com.facebook.stetho:stetho:1.4.2'
 }
