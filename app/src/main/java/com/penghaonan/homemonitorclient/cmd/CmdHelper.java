@@ -15,9 +15,16 @@ import com.penghaonan.homemonitorclient.App;
 import com.penghaonan.homemonitorclient.R;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
+/**
+ * 管理服务器预置命令
+ */
 
 public class CmdHelper implements App.ICallReceiverListener {
     public final static String CMD_GET_PROFILE = "getprofile";
@@ -61,7 +68,17 @@ public class CmdHelper implements App.ICallReceiverListener {
     }
 
     public Collection<CommandData> getCmd() {
-        return mCommands.values();
+        List<CommandData> cmds = new LinkedList<>();
+        for (CommandData cmd : mCommands.values()) {
+            cmds.add(cmd);
+        }
+        Collections.sort(cmds, new Comparator<CommandData>() {
+            @Override
+            public int compare(CommandData lhs, CommandData rhs) {
+                return rhs.index - lhs.index;
+            }
+        });
+        return cmds;
     }
 
     private void loadCmdFromCache() {
@@ -91,11 +108,6 @@ public class CmdHelper implements App.ICallReceiverListener {
 
     private void updateCmds(List<CommandData> datas) {
         mCommands.clear();
-
-//        CommandData cmd = new CommandData();
-//        cmd.command = CMD_GET_PROFILE;
-//        cmd.description = AppDelegate.getApp().getString(R.string.cmd_get_profile);
-//        mCommands.put(cmd.command, cmd);
 
         if (!CollectionUtils.isEmpty(datas)) {
             for (CommandData data : datas) {
