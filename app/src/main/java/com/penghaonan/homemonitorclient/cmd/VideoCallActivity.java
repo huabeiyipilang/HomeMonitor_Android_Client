@@ -6,6 +6,7 @@ import android.widget.TextView;
 import com.hyphenate.chat.EMCallStateChangeListener;
 import com.hyphenate.chat.EMClient;
 import com.hyphenate.exceptions.EMNoActiveCallException;
+import com.hyphenate.exceptions.HyphenateException;
 import com.hyphenate.media.EMLocalSurfaceView;
 import com.hyphenate.media.EMOppositeSurfaceView;
 import com.penghaonan.appframework.AppDelegate;
@@ -45,6 +46,12 @@ public class VideoCallActivity extends BaseActivity {
                         showTips(getString(R.string.video_call_connecting));
                         break;
                     case CONNECTED: // 双方已经建立连接
+                        try {
+                            EMClient.getInstance().callManager().pauseVideoTransfer();
+                            EMClient.getInstance().callManager().pauseVoiceTransfer();
+                        } catch (HyphenateException e) {
+                            Logger.e(e);
+                        }
                         showTips("连接已建立");
                         break;
 
